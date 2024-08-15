@@ -13,6 +13,8 @@ import com.icm.security_scorpion_app.data.DeviceModel
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
+import java.util.Timer
+import java.util.TimerTask
 
 class DeviceAdapter(private val context: Context, private val devices: List<DeviceModel>) : RecyclerView.Adapter<DeviceAdapter.DeviceViewHolder>() {
 
@@ -72,17 +74,28 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
         webSocketClient?.connect()
     }
 
+    private fun reconnect() {
+        // Logic to reconnect with a delay
+        Timer().schedule(object : TimerTask() {
+            override fun run() {
+                createWebSocketClient(URI("ws://samloto.com:7094/ws"))
+            }
+        }, 5000) // Reconnect after 5 seconds
+    }
+
     fun sendMessageToWebSocket(message: String) {
         if (webSocketClient?.isOpen == true) {
             webSocketClient?.send(message)
             (context as MainActivity).runOnUiThread {
-                Toast.makeText(context, "Activado remotamente", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Dispositivo Activado Remotamente", Toast.LENGTH_SHORT).show()
             }
+            webSocketClient?.close()
         } else {
             Log.e("WebSocket", "WebSocket is not open. Cannot send message.")
             (context as MainActivity).runOnUiThread {
                 Toast.makeText(context, "No se puede conectar al dispositivo", Toast.LENGTH_SHORT).show()
             }
+            reconnect()
         }
     }
 }
