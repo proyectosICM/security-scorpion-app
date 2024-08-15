@@ -19,7 +19,6 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
     private var webSocketClient: WebSocketClient? = null
 
     init {
-        // Conectar al WebSocket en la inicialización del adaptador
         val uri = URI("ws://samloto.com:7094/ws")
         createWebSocketClient(uri)
     }
@@ -40,9 +39,9 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
         holder.deviceName.text = device.nameDevice
         holder.deviceIp.text = device.ipLocal
 
-        holder.btnAction.setOnClickListener{
-            Toast.makeText(context, "Clicked on ${device.nameDevice}", Toast.LENGTH_SHORT).show()
-            Log.d("Activado", "Clicked on ${device.nameDevice}")
+        holder.btnAction.setOnClickListener {
+            Toast.makeText(context, "Activado Remotamente ${device.nameDevice}", Toast.LENGTH_SHORT).show()
+            Log.d("Activado Remotamente", "Clicked on ${device.nameDevice}")
             sendMessageToWebSocket("${device.nameDevice}:Activating")
         }
     }
@@ -67,16 +66,23 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
 
             override fun onError(ex: Exception?) {
                 Log.e("WebSocket", "Error: ${ex?.message}")
+
             }
         }
         webSocketClient?.connect()
     }
 
-    private fun sendMessageToWebSocket(message: String) {
+    fun sendMessageToWebSocket(message: String) {
         if (webSocketClient?.isOpen == true) {
             webSocketClient?.send(message)
+            (context as MainActivity).runOnUiThread {
+                Toast.makeText(context, "Activado remotamente", Toast.LENGTH_SHORT).show()
+            }
         } else {
             Log.e("WebSocket", "WebSocket is not open. Cannot send message.")
+            (context as MainActivity).runOnUiThread {
+                Toast.makeText(context, "No se puede conectar al dispositivo", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

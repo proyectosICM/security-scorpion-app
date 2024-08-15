@@ -20,6 +20,7 @@ import com.google.gson.Gson
 import com.icm.security_scorpion_app.data.DeleteDeviceStorageManager
 import com.icm.security_scorpion_app.data.DeviceModel
 import com.icm.security_scorpion_app.data.LoadDeviceStorageManager
+import com.icm.security_scorpion_app.data.SaveDeviceStorageManager
 import com.icm.security_scorpion_app.data.api.JsonPlaceHolderApi
 import com.icm.security_scorpion_app.utils.ESP32ConnectionManager
 import com.icm.security_scorpion_app.utils.NetworkChangeReceiver
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ipRouterTextView: TextView
 
     private var connectionManager: ESP32ConnectionManager? = null
+    private lateinit var deviceAdapter: DeviceAdapter // Añadir referencia al adaptador
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,11 +49,8 @@ class MainActivity : AppCompatActivity() {
 
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
-
         initializeUI()
-
         initializeNetworkChangeReceiver()
-
         registerNetworkChangeReceiver()
 
         loadAndDisplayDevices()
@@ -87,21 +86,18 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         unregisterReceiver(networkChangeReceiver)
     }
+
     override fun onResume() {
         super.onResume()
-        loadAndDisplayDevices() // Recargar la lista de dispositivos cuando se vuelve a la actividad
+        loadAndDisplayDevices()
     }
 
-
-
     private fun loadAndDisplayDevices() {
-        // Carga los dispositivos desde el JSON
         val devices = LoadDeviceStorageManager.loadDevicesFromJson(this)
         Log.d("MainActivity", "Devices loaded: $devices")
-        // Limpia el contenedor
+
         llDevicesContent.removeAllViews()
 
-        // Infla y agrega una tarjeta para cada dispositivo
         val inflater = LayoutInflater.from(this)
         for (device in devices) {
             val view = inflater.inflate(R.layout.device_item, llDevicesContent, false)
@@ -113,34 +109,27 @@ class MainActivity : AppCompatActivity() {
             tvDeviceName.text = device.nameDevice
             tvDeviceIp.text = device.ipLocal
 
-            // Configura el botón de acción si es necesario
             btnAction.setOnClickListener {
-                Log.d("DeviceAction", "Accionado")
                 connectionManager?.disconnect()
                 connectionManager = ESP32ConnectionManager(tvDeviceIp.text.toString(), 82)
                 connectionManager?.connect { isConnected ->
                     if (isConnected) {
                         connectionManager?.sendMessage("activate")
                         runOnUiThread {
-                            Toast.makeText(this, "Dispositivo activado", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        runOnUiThread {
-                            Toast.makeText(
-                                this,
-                                "No se pudo conectar al dispositivo",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                        // Envía el mensaje a través del WebSocket si la conexión local falla
+                        deviceAdapter.sendMessageToWebSocket("${device.nameDevice}:Activating")
                     }
                 }
             }
 
-            btnDeleteDevice.setOnClickListener{
+            btnDeleteDevice.setOnClickListener {
                 showDeleteConfirmationDialog(device.nameDevice) {
                     val result = DeleteDeviceStorageManager.deleteDeviceFromJson(this, device.nameDevice)
                     if (result) {
-                        loadAndDisplayDevices() // Recargar la lista de dispositivos después de la eliminación
+                        loadAndDisplayDevices()
                     } else {
                         Log.d("DeviceDeletion", "No se pudo eliminar el dispositivo")
                     }
@@ -149,6 +138,9 @@ class MainActivity : AppCompatActivity() {
 
             llDevicesContent.addView(view)
         }
+
+        // Inicializa el adaptador para obtener la referencia
+        deviceAdapter = DeviceAdapter(this, devices)
     }
 
     private fun showDeleteConfirmationDialog(deviceName: String, onConfirm: () -> Unit) {
@@ -165,11 +157,25 @@ class MainActivity : AppCompatActivity() {
         builder.create().show()
     }
 
+    private fun showDataOverwriteConfirmationDialog() {
+        val builder = AlertDialog.Builder(this, R.style.DialogButtonTextStyle)
+        builder.setTitle("Confirmación de Datos")
+        builder.setMessage("Se eliminarán los datos guardados y se descargarán nuevos datos. ¿Deseas continuar?")
+        builder.setPositiveButton("Aceptar") { dialog, _ ->
+            fetchDevicesFromServer()
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancelar") { dialog, _ ->
+            dialog.dismiss()
+        }
+        builder.create().show()
+    }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ADD_DEVICE_REQUEST_CODE && resultCode == RESULT_OK) {
-            loadAndDisplayDevices() // Recargar la lista de dispositivos después de agregar uno nuevo
+            loadAndDisplayDevices()
         }
     }
 
@@ -177,7 +183,6 @@ class MainActivity : AppCompatActivity() {
         private const val ADD_DEVICE_REQUEST_CODE = 1
     }
 
-    /* Toolbar */
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.options_menu, menu)
         return true
@@ -186,7 +191,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_settings -> {
-                fetchDevicesFromServer()
+                showDataOverwriteConfirmationDialog()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -206,21 +211,37 @@ class MainActivity : AppCompatActivity() {
             override fun onResponse(call: Call<List<DeviceModel>>, response: Response<List<DeviceModel>>) {
                 if (!response.isSuccessful) {
                     Log.e("MainActivity", "Response not successful: ${response.errorBody()?.string()}")
+                    showConnectionErrorDialog()
                     return
                 }
 
                 val devices = response.body()
                 if (devices != null) {
+                    SaveDeviceStorageManager.saveDevicesToJson(this@MainActivity, emptyList())
+                    SaveDeviceStorageManager.saveDevicesToJson(this@MainActivity, devices)
+                    loadAndDisplayDevices()
                     val jsonResponse = Gson().toJson(devices)
                     Log.d("MainActivity", "Devices loaded: $jsonResponse")
                 } else {
                     Log.e("MainActivity", "No devices received")
+                    showConnectionErrorDialog()
                 }
             }
 
             override fun onFailure(call: Call<List<DeviceModel>>, t: Throwable) {
                 Log.e("MainActivity", "API call failed: ${t.message}")
+                showConnectionErrorDialog()
             }
         })
+    }
+
+    private fun showConnectionErrorDialog() {
+        val builder = AlertDialog.Builder(this, R.style.DialogButtonTextStyle)
+        builder.setTitle("Error de Conexión")
+        builder.setMessage("No se pudo conectar con el servidor. Por favor, inténtalo de nuevo.")
+        builder.setPositiveButton("OK") { dialog, _ ->
+            dialog.dismiss()
+        }
+        builder.create().show()
     }
 }
