@@ -9,6 +9,7 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.icm.security_scorpion_app.utils.DeviceManager
@@ -95,6 +96,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.device_settings -> {
+                Toast.makeText(this, "Configurar dispositivo nuevo seleccionado", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, ConfigureDeviceActivity::class.java)
+                startActivity(intent)
+                true
+            }
             R.id.action_settings -> {
                 showDataOverwriteConfirmationDialog()
                 true
