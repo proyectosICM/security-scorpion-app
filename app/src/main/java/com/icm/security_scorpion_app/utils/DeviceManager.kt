@@ -1,14 +1,18 @@
 package com.icm.security_scorpion_app.utils
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.cardview.widget.CardView
 import com.google.gson.Gson
 import com.icm.security_scorpion_app.DeviceAdapter
+import com.icm.security_scorpion_app.EditDeviceActivity
 import com.icm.security_scorpion_app.R
 import com.icm.security_scorpion_app.data.DeleteDeviceStorageManager
 import com.icm.security_scorpion_app.data.DeviceModel
@@ -40,7 +44,7 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
             val tvDeviceName = view.findViewById<TextView>(R.id.tvDeviceName)
             val tvDeviceIp = view.findViewById<TextView>(R.id.tvDeviceIp)
             val btnAction = view.findViewById<Button>(R.id.btnAction)
-            val btnDeleteDevice = view.findViewById<Button>(R.id.btnDeleteDevice)
+            val btnEditDevice = view.findViewById<ImageView>(R.id.btnEditDevice)
 
             tvDeviceName.text = device.nameDevice
             tvDeviceIp.text = device.ipLocal
@@ -58,15 +62,12 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
                 }
             }
 
-            btnDeleteDevice.setOnClickListener {
-                DialogUtils.showDeleteConfirmationDialog(context, device.nameDevice) {
-                    val result = DeleteDeviceStorageManager.deleteDeviceFromJson(context, device.nameDevice)
-                    if (result) {
-                        loadAndDisplayDevices()
-                    } else {
-                        Log.d("DeviceDeletion", "No se pudo eliminar el dispositivo")
-                    }
+            btnEditDevice.setOnClickListener {
+                val intent = Intent(context, EditDeviceActivity::class.java).apply {
+                    putExtra("deviceName", device.nameDevice)
+                    putExtra("deviceIp", device.ipLocal)
                 }
+                context.startActivity(intent)
             }
 
             llDevicesContent.addView(view)

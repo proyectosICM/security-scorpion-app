@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".EditDeviceActivity"
+    android:fitsSystemWindows="true"
+    android:background="@color/black">
+
+    <!-- Título General -->
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Editar Dispositivo"
+        android:textSize="24sp"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        android:layout_marginTop="32dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5" />
+
+    <!-- Etiqueta para el Nombre del Dispositivo -->
+    <TextView
+        android:id="@+id/deviceNameLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Nombre de dispositivo"
+        android:textSize="16sp"
+        android:textColor="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/titleTextView"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="24dp"/>
+
+    <!-- EditText para el Nombre del Dispositivo -->
+    <EditText
+        android:id="@+id/deviceNameEditText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Ingrese el nombre del dispositivo"
+        android:inputType="text"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="20dp"
+        android:padding="12dp"
+        android:background="@drawable/edit_text_border"
+        app:layout_constraintTop_toBottomOf="@id/deviceNameLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Etiqueta para la IP del Dispositivo -->
+    <TextView
+        android:id="@+id/deviceIpLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="IP de dispositivo"
+        android:textSize="16sp"
+        android:textColor="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/deviceNameEditText"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="16dp"/>
+
+    <!-- EditText para la IP del Dispositivo -->
+    <EditText
+        android:id="@+id/deviceIpEditText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Ingrese la IP del dispositivo"
+        android:inputType="text"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="20dp"
+        android:padding="12dp"
+        android:background="@drawable/edit_text_border"
+        app:layout_constraintTop_toBottomOf="@id/deviceIpLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Botón para Guardar -->
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Guardar"
+        android:textColor="@color/black"
+        android:layout_marginTop="24dp"
+        android:layout_marginHorizontal="20dp"
+        android:background="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/deviceIpEditText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
