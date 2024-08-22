@@ -68,7 +68,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnTest"/>
 
-    <!-- ProgressBar para Carga      style="@style/CustomCircularProgressBar"-->
+    <!-- ProgressBar para Carga -->
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
@@ -83,15 +83,67 @@
     <!-- Mensaje de Validación -->
     <TextView
         android:id="@+id/tvValidationMessage"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textColor="@color/white"
-        android:textSize="16sp"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/progressBar"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@id/progressBar" />
+
+    <!-- Texto del ID del Dispositivo -->
+    <TextView
+        android:id="@+id/lbDeviceId"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:text="ID del dispositivo: "
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/deviceIdData"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvValidationMessage" />
+
+    <TextView
+        android:id="@+id/deviceIdData"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/lbDeviceId"
+        app:layout_constraintTop_toBottomOf="@id/tvValidationMessage" />
+
+    <!-- Texto del Nombre del Dispositivo -->
+    <TextView
+        android:id="@+id/lbdeviceNameData"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:text="Nombre del dispositivo: "
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/deviceNameData"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/deviceIdData" />
+
+    <TextView
+        android:id="@+id/deviceNameData"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/lbdeviceNameData"
+        app:layout_constraintTop_toBottomOf="@id/deviceIdData" />
 
     <!-- Botón Agregar -->
     <Button
@@ -103,25 +155,10 @@
         android:padding="12dp"
         android:textColor="@color/black"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tvValidationMessage"
+        app:layout_constraintTop_toBottomOf="@id/deviceNameData"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
-
-
-
-    <!-- Texto del Nombre del Dispositivo -->
-    <TextView
-        android:id="@+id/deviceNameData"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnAdd" />
 
     <!-- Botón para Volver -->
     <Button

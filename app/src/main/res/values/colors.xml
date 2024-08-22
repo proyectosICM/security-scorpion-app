@@ -11,6 +11,8 @@
     <color name="colorSuccess">#4CAF50</color>
     <color name="colorError">#F44336</color>
 
+    <color name="colorWarning">#FFC107</color>
+
     <color name="colorPrimary">#4c4f54</color>
     <color name="colorPrimaryDark">#4c4f54</color>
     <color name="colorAccent">#FF018786</color>

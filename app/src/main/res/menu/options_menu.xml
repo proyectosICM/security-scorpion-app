@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/device_settings"
         android:title="Configurar dispositivo nuevo"
         android:orderInCategory="100"
-        android:showAsAction="never" />
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/load_from_json"
+        android:title="Cargar desde un json"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_settings"
-        android:title="¿Cargar desde el servidor?"
+        android:title="Cargar desde el servidor"
         android:orderInCategory="100"
-        android:showAsAction="never" />
+        app:showAsAction="never" />
 </menu>

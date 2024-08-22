@@ -24,6 +24,7 @@ class AddDevice : AppCompatActivity() {
     private lateinit var etIpAddress: EditText
     private lateinit var tvValidationMessage: TextView
     private lateinit var deviceNameData: TextView
+    private lateinit var deviceIdData: TextView
 
     private var connectionManager: ESP32ConnectionManager? = null
 
@@ -38,6 +39,7 @@ class AddDevice : AppCompatActivity() {
         etIpAddress = findViewById(R.id.etIpAddress)
         tvValidationMessage = findViewById(R.id.tvValidationMessage)
         deviceNameData = findViewById(R.id.deviceNameData)
+        deviceIdData = findViewById(R.id.deviceIdData)
 
         btnBack.setOnClickListener {
             finish()
@@ -50,6 +52,7 @@ class AddDevice : AppCompatActivity() {
             // Clear previous validation message and button
             tvValidationMessage.text = ""
             deviceNameData.text = ""
+            deviceIdData.text = ""
             tvValidationMessage.setTextColor(resources.getColor(R.color.white, null)) // Color por defecto
             btnAdd.visibility = View.GONE
 
@@ -66,9 +69,10 @@ class AddDevice : AppCompatActivity() {
         btnAdd.setOnClickListener {
             val ipAddress = etIpAddress.text.toString()
             val deviceName = deviceNameData.text.toString()
+            val deviceId = deviceIdData.text.toString() // Obtén el ID como String
 
-            if (ipAddress.isNotEmpty() && deviceName.isNotEmpty()) {
-                val device = DeviceModel(ipLocal = ipAddress, nameDevice = deviceName)
+            if (ipAddress.isNotEmpty() && deviceName.isNotEmpty() && deviceId.isNotEmpty()) {
+                val device = DeviceModel(id = deviceId.toLong(), ipLocal = ipAddress, nameDevice = deviceName) // Asegúrate de convertir el ID a Long
                 val devices = SaveDeviceStorageManager.loadDevicesFromJson(this).toMutableList()
                 devices.add(device)
                 SaveDeviceStorageManager.saveDevicesToJson(this, devices)
@@ -88,22 +92,70 @@ class AddDevice : AppCompatActivity() {
         progressBar.visibility = View.VISIBLE
 
         val routerIp = NetworkUtils.getRouterIpAddress(this)
-        if (isIpInSameNetwork(ipAddress, routerIp)) {
+        if (NetworkUtils.isIpInSameNetwork(ipAddress, routerIp)) {
             connectionManager?.disconnect()
             connectionManager = ESP32ConnectionManager(ipAddress, 82)
             connectionManager?.connect { isConnected ->
                 if (isConnected) {
-                    connectionManager?.sendMessage("getName")
+                    // Enviar solicitud para obtener el ID del dispositivo
+                    connectionManager?.sendMessage("getId")
+                    // Recibir la respuesta para el ID del dispositivo
+                    connectionManager?.receiveMessage { responseId ->
+                        // Extraer el ID del dispositivo
+                        val deviceId = NameDeviceExtractor.extractId(responseId)
 
-                    connectionManager?.receiveMessage { response ->
-                        // Ocultar el ProgressBar al recibir la respuesta
-                        progressBar.visibility = View.GONE
-                        tvValidationMessage.text = "Dispositivo conectado correctamente."
-                        tvValidationMessage.setTextColor(resources.getColor(R.color.colorSuccess, null))
-                        val name = NameDeviceExtractor.extractName(response)
-                        deviceNameData.text = "$name"
-                        btnAdd.visibility = View.VISIBLE
-                        connectionManager?.sendMessage("disconnect")
+                        if (deviceId.isNullOrEmpty() || deviceId == "Unknown") {
+                            // Mostrar mensaje de error
+                            tvValidationMessage.text = "Error: ID del dispositivo no válido."
+                            tvValidationMessage.setTextColor(resources.getColor(R.color.colorError, null))
+                            // Ocultar el botón para agregar el dispositivo
+                            btnAdd.visibility = View.GONE
+                            // Detener el proceso
+                            progressBar.visibility = View.GONE
+                            return@receiveMessage
+                        } else {
+                            deviceIdData.text = deviceId
+                        }
+
+                        // Luego, enviar solicitud para obtener el nombre del dispositivo
+                        connectionManager?.sendMessage("getName")
+
+                        // Recibir la respuesta para el nombre del dispositivo
+                        connectionManager?.receiveMessage { responseName ->
+                            // Ocultar el ProgressBar al recibir la respuesta
+                            progressBar.visibility = View.GONE
+
+                            // Extraer el nombre del dispositivo
+                            val deviceName = NameDeviceExtractor.extractName(responseName)
+
+                            if (deviceName.isNullOrEmpty() || deviceName == "Unknown") {
+                                // Mostrar mensaje de error
+                                tvValidationMessage.text = "Error: Nombre del dispositivo no válido."
+                                tvValidationMessage.setTextColor(resources.getColor(R.color.colorError, null))
+                                // Ocultar el botón para agregar el dispositivo
+                                btnAdd.visibility = View.GONE
+                            } else {
+                                deviceNameData.text = deviceName
+
+                                // Verificar si el dispositivo ya está agregado
+                                val existingDevices = SaveDeviceStorageManager.loadDevicesFromJson(this)
+                                val deviceExists = existingDevices.any { it.ipLocal == ipAddress }
+
+                                if (deviceExists) {
+                                    // Mostrar mensaje de alerta y ocultar el botón para agregar
+                                    tvValidationMessage.text = "Este dispositivo ya se encuentra agregado."
+                                    tvValidationMessage.setTextColor(resources.getColor(R.color.colorWarning, null))
+                                    btnAdd.visibility = View.GONE
+                                } else {
+                                    // Mostrar mensaje de éxito y el botón para agregar el dispositivo
+                                    tvValidationMessage.text = "Dispositivo conectado correctamente."
+                                    tvValidationMessage.setTextColor(resources.getColor(R.color.colorSuccess, null))
+                                    btnAdd.visibility = View.VISIBLE
+                                }
+
+                                connectionManager?.sendMessage("disconnect")
+                            }
+                        }
                     }
                 } else {
                     // Ocultar el ProgressBar si no se pudo conectar
@@ -111,15 +163,17 @@ class AddDevice : AppCompatActivity() {
                     tvValidationMessage.text = "No se pudo conectar al dispositivo."
                     tvValidationMessage.setTextColor(resources.getColor(R.color.colorError, null))
                     deviceNameData.text = ""
+                    btnAdd.visibility = View.GONE
                 }
             }
         } else {
             progressBar.visibility = View.GONE
             tvValidationMessage.text = "IP no válida dentro de la red."
             tvValidationMessage.setTextColor(resources.getColor(R.color.colorError, null))
+            btnAdd.visibility = View.GONE
         }
     }
-
+/*
     private fun isIpInSameNetwork(ipAddress: String, routerIp: String): Boolean {
         // Convert IP addresses to integer values
         val ipParts = ipAddress.split(".").map { it.toInt() }
@@ -130,5 +184,5 @@ class AddDevice : AppCompatActivity() {
         } else {
             false
         }
-    }
+    }*/
 }

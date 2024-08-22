@@ -19,6 +19,17 @@
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <TextView
+        android:id="@+id/tvDeviceId"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="ID"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvDeviceName"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
         android:id="@+id/tvDeviceIp"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -26,7 +37,7 @@
         android:textColor="@color/white"
         android:textSize="14sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvDeviceName"
+        app:layout_constraintTop_toBottomOf="@id/tvDeviceId"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <ImageView
@@ -57,11 +68,5 @@
         app:layout_constraintWidth_percent="0.7"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/btnEditDevice"
-        app:layout_constraintTop_toBottomOf="@id/tvDeviceIp"
-    />
-
-
-
-
-
+        app:layout_constraintTop_toBottomOf="@id/tvDeviceIp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

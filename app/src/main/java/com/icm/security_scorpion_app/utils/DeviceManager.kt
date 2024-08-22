@@ -9,7 +9,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.cardview.widget.CardView
 import com.google.gson.Gson
 import com.icm.security_scorpion_app.DeviceAdapter
 import com.icm.security_scorpion_app.EditDeviceActivity
@@ -19,8 +18,6 @@ import com.icm.security_scorpion_app.data.DeviceModel
 import com.icm.security_scorpion_app.data.LoadDeviceStorageManager
 import com.icm.security_scorpion_app.data.SaveDeviceStorageManager
 import com.icm.security_scorpion_app.data.api.JsonPlaceHolderApi
-import com.icm.security_scorpion_app.utils.ESP32ConnectionManager
-import com.icm.security_scorpion_app.utils.DialogUtils
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -43,18 +40,20 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
             val view = inflater.inflate(R.layout.device_item, llDevicesContent, false)
             val tvDeviceName = view.findViewById<TextView>(R.id.tvDeviceName)
             val tvDeviceIp = view.findViewById<TextView>(R.id.tvDeviceIp)
+            val tvDeviceId = view.findViewById<TextView>(R.id.tvDeviceId) // Añadir esta línea
             val btnAction = view.findViewById<Button>(R.id.btnAction)
             val btnEditDevice = view.findViewById<ImageView>(R.id.btnEditDevice)
 
             tvDeviceName.text = device.nameDevice
             tvDeviceIp.text = device.ipLocal
+            tvDeviceId.text = device.id.toString()
 
             btnAction.setOnClickListener {
                 connectionManager?.disconnect()
-                connectionManager = ESP32ConnectionManager(tvDeviceIp.text.toString(), 82)
+                connectionManager = ESP32ConnectionManager(tvDeviceIp.text.toString(), GlobalSettings.SOCKET_LOCAL_PORT)
                 connectionManager?.connect { isConnected ->
                     if (isConnected) {
-                        connectionManager?.sendMessage("activate")
+                        connectionManager?.sendMessage(GlobalSettings.MESSAGE_ACTIVATE)
                         Toast.makeText(context, "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
                     } else {
                         deviceAdapter.sendMessageToWebSocket("${device.nameDevice}:Activating")
@@ -66,6 +65,7 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
                 val intent = Intent(context, EditDeviceActivity::class.java).apply {
                     putExtra("deviceName", device.nameDevice)
                     putExtra("deviceIp", device.ipLocal)
+                    putExtra("deviceId", device.id.toString())
                 }
                 context.startActivity(intent)
             }
@@ -77,7 +77,7 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
 
     fun fetchDevicesFromServer() {
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://samloto.com:4015/api/")
+            .baseUrl(GlobalSettings.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
@@ -87,7 +87,7 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
         call.enqueue(object : Callback<List<DeviceModel>> {
             override fun onResponse(call: Call<List<DeviceModel>>, response: Response<List<DeviceModel>>) {
                 if (!response.isSuccessful) {
-                    Log.e("DeviceManager", "Response not successful: ${response.errorBody()?.string()}")
+                    Log.e("DeviceManager(s)", "Response not successful: ${response.errorBody()?.string()}")
                     DialogUtils.showConnectionErrorDialog(context)
                     return
                 }
@@ -98,9 +98,9 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
                     SaveDeviceStorageManager.saveDevicesToJson(context, devices)
                     loadAndDisplayDevices()
                     val jsonResponse = Gson().toJson(devices)
-                    Log.d("DeviceManager", "Devices loaded: $jsonResponse")
+                    Log.d("DeviceManager (s)", "Devices loaded: $jsonResponse")
                 } else {
-                    Log.e("DeviceManager", "No devices received")
+                    Log.e("DeviceManager (s)", "No devices received")
                     DialogUtils.showConnectionErrorDialog(context)
                 }
             }

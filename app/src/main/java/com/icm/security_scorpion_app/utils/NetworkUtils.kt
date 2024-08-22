@@ -21,4 +21,16 @@ object NetworkUtils {
             "IP no disponible"
         }
     }
+
+     fun isIpInSameNetwork(ipAddress: String, routerIp: String): Boolean {
+        // Convert IP addresses to integer values
+        val ipParts = ipAddress.split(".").map { it.toInt() }
+        val routerIpParts = routerIp.split(".").map { it.toInt() }
+        return if (ipParts.size == 4 && routerIpParts.size == 4) {
+            // Check if IP is in the same subnet as the router IP
+            ipParts[0] == routerIpParts[0] && ipParts[1] == routerIpParts[1] && ipParts[2] == routerIpParts[2]
+        } else {
+            false
+        }
+    }
 }

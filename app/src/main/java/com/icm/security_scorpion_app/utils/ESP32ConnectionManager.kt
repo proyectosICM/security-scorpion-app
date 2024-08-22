@@ -21,7 +21,7 @@ class ESP32ConnectionManager(private val serverIp: String, private val port: Int
 
     fun disconnect() {
         try {
-            sendMessage("disconnect")
+            sendMessage(GlobalSettings.MESSAGE_DISCONNECT)
             isListening = false
             socket?.close()
             Log.d("mens", "Desconectado del servidor")
@@ -62,6 +62,7 @@ class ESP32ConnectionManager(private val serverIp: String, private val port: Int
                 true
             } catch (e: Exception) {
                 e.printStackTrace()
+                Log.d("Error (l)","Error en conexion socket local")
                 false
             }
         }
