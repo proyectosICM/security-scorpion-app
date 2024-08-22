@@ -102,6 +102,11 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
                 true
             }
+            R.id.load_from_json -> {
+                val intent = Intent(this, LoadFromJsonActivity::class.java)
+                startActivity(intent)
+                true
+            }
             R.id.action_settings -> {
                 showDataOverwriteConfirmationDialog()
                 true

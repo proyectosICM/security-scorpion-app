@@ -22,6 +22,19 @@
         android:theme="@style/Theme.Securityscorpionapp"
         tools:targetApi="31">
         <activity
+            android:name=".LoadFromJsonActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.PICK" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/json" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".EditDeviceActivity"
             android:exported="false"
             android:theme="@style/AppTheme" />
