@@ -97,7 +97,6 @@ class EditDeviceActivity : AppCompatActivity() {
         deviceName?.let {
             DialogUtils.showDeleteConfirmationDialog(this, it) {
                 if (DeleteDeviceStorageManager.deleteDeviceFromJson(this, it)) {
-                    startActivity(Intent(this, MainActivity::class.java))
                     finish()
                 } else {
                     Log.d("DeviceDeletion", "No se pudo eliminar el dispositivo")

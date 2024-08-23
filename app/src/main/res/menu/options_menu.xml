@@ -16,4 +16,9 @@
         android:title="Cargar desde el servidor"
         android:orderInCategory="100"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_share_device_data"
+        android:title="Compartir datos de dispositivos"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
 </menu>

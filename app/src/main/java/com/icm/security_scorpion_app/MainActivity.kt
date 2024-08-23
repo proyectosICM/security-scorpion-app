@@ -3,7 +3,10 @@ package com.icm.security_scorpion_app
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
@@ -12,9 +15,14 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.FileProvider
+import com.google.gson.Gson
+import com.icm.security_scorpion_app.data.LoadDeviceStorageManager
 import com.icm.security_scorpion_app.utils.DeviceManager
 import com.icm.security_scorpion_app.utils.NetworkChangeReceiver
 import com.icm.security_scorpion_app.utils.DialogUtils
+import java.io.File
+import java.io.FileWriter
 
 class MainActivity : AppCompatActivity() {
 
@@ -111,7 +119,50 @@ class MainActivity : AppCompatActivity() {
                 showDataOverwriteConfirmationDialog()
                 true
             }
+            R.id.action_share_device_data -> {
+                shareDeviceData()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun shareDeviceData() {
+        // Obtener la lista de dispositivos
+        val devices = LoadDeviceStorageManager.loadDevicesFromJson(this)
+        Log.d("ss", "$devices")
+        // Convertir la lista de dispositivos a JSON
+        val gson = Gson()
+        val jsonString = gson.toJson(devices)
+
+        // Crear un archivo para almacenar el JSON
+        val fileName = "device_data.json"
+        val file = File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), fileName)
+
+        try {
+            // Escribir el JSON en el archivo
+            FileWriter(file).use { writer ->
+                writer.write(jsonString)
+            }
+
+            // Compartir el archivo a través de WhatsApp
+            val uri: Uri = FileProvider.getUriForFile(
+                this,
+                "$packageName.provider", // Asegúrate de que el provider esté configurado en tu manifest
+                file
+            )
+
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/json"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                setPackage("com.whatsapp")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            startActivity(Intent.createChooser(shareIntent, "Compartir datos de dispositivos"))
+
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error al compartir datos: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 }

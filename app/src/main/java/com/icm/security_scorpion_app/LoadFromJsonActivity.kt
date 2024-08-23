@@ -45,6 +45,40 @@ class LoadFromJsonActivity : AppCompatActivity() {
             Log.d(TAG, "Load data button clicked")
             loadDataFromJson()
         }
+
+        // Handle incoming Intents
+        handleIncomingIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleIncomingIntent(intent)
+    }
+
+    private fun handleIncomingIntent(intent: Intent?) {
+        intent?.let {
+            if (Intent.ACTION_SEND == it.action && "application/json" == it.type) {
+                it.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)?.let { uri ->
+                    Log.d(TAG, "File selected from external app: $uri")
+                    val fileName = getFileName(uri)
+                    statusTextView.text = "Archivo seleccionado: $fileName"
+                    storeSelectedFileUri(uri)
+                    loadDataFromJson()  // Automatically load data after file selection
+                }
+            } else if (Intent.ACTION_VIEW == it.action && "application/json" == it.type) {
+                it.data?.let { uri ->
+                    Log.d(TAG, "File selected from external app: $uri")
+                    val fileName = getFileName(uri)
+                    statusTextView.text = "Archivo seleccionado: $fileName"
+                    storeSelectedFileUri(uri)
+                    loadDataFromJson()  // Automatically load data after file selection
+                }
+            } else {
+                Log.d(TAG, "No valid action or type")
+            }
+        } ?: run {
+            Log.d(TAG, "Intent is null")
+        }
     }
 
     private fun openFilePicker() {
@@ -70,7 +104,6 @@ class LoadFromJsonActivity : AppCompatActivity() {
                     Log.d(TAG, "JSON content: $jsonString")
 
                     // Parse JSON and update the data store
-                    // Parse JSON and update the data store
                     val gson = Gson()
                     val deviceListType = object : TypeToken<List<DeviceModel>>() {}.type
                     val devices: List<DeviceModel> = gson.fromJson(jsonString, deviceListType)
@@ -94,8 +127,7 @@ class LoadFromJsonActivity : AppCompatActivity() {
     }
 
     private fun clearExistingData() {
-        // Implement logic to clear existing data
-        // Example: SaveDeviceStorageManager.saveDevicesToJson(this, emptyList())
+        // Clear existing data
         SaveDeviceStorageManager.saveDevicesToJson(this, emptyList())
         Log.d(TAG, "Existing data cleared")
     }
@@ -145,6 +177,7 @@ class LoadFromJsonActivity : AppCompatActivity() {
     private fun storeSelectedFileUri(uri: Uri) {
         // Store the URI in a variable or persistent storage
         selectedFileUri = uri
+        Log.d(TAG, "Stored URI: $uri")
     }
 
     private fun getSelectedFileUri(): Uri? {
