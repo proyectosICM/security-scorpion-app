@@ -111,4 +111,54 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
             }
         })
     }
+
+    fun fetchDevicesFromServerAuth(username: String, password: String) {
+        val retrofit = Retrofit.Builder()
+            .baseUrl(GlobalSettings.BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val jsonPlaceHolderApi = retrofit.create(JsonPlaceHolderApi::class.java)
+        val call = jsonPlaceHolderApi.getDevicesByAuth(username, password)
+
+        call.enqueue(object : Callback<List<DeviceModel>> {
+            override fun onResponse(call: Call<List<DeviceModel>>, response: Response<List<DeviceModel>>) {
+                when (response.code()) {
+                    // Código 200 OK: respuesta exitosa
+                    200 -> {
+                        val devices = response.body()
+                        if (devices != null) {
+                            SaveDeviceStorageManager.saveDevicesToJson(context, devices)
+                            loadAndDisplayDevices()
+                            val jsonResponse = Gson().toJson(devices)
+                            Log.d("DeviceManager(s)", "Devices loaded: $jsonResponse")
+                        } else {
+                            Log.e("DeviceManager(s)", "No devices received")
+                            DialogUtils.showConnectionErrorDialog(context)
+                        }
+                    }
+                    // Código 401 Unauthorized: usuario o contraseña incorrectos
+                    401 -> {
+                        Log.e("DeviceManager(s)", "Unauthorized: ${response.errorBody()?.string()}")
+                        DialogUtils.showInvalidCredentialsDialog(context)
+                    }
+                    // Código 403 Forbidden: grupo no activo
+                    403 -> {
+                        Log.e("DeviceManager(s)", "Forbidden: ${response.errorBody()?.string()}")
+                        DialogUtils.showGroupNotActiveDialog(context)
+                    }
+                    // Otros códigos de error
+                    else -> {
+                        Log.e("DeviceManager(s)", "Response not successful: ${response.code()} ${response.errorBody()?.string()}")
+                        DialogUtils.showConnectionErrorDialog(context)
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<List<DeviceModel>>, t: Throwable) {
+                Log.e("DeviceManager(s)", "API call failed: ${t.message}")
+                DialogUtils.showConnectionErrorDialog(context)
+            }
+        })
+    }
 }

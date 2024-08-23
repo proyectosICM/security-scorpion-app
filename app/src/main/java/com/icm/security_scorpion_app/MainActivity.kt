@@ -86,6 +86,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showLoginDialog() {
+        DialogUtils.showDataOverwriteConfirmationDialog(this) {
+            DialogUtils.showLoginDialog(this) { username, password ->
+                deviceManager.fetchDevicesFromServerAuth(username, password)
+                //Toast.makeText(this, "Usuario: $username, Contraseña: $password", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ADD_DEVICE_REQUEST_CODE && resultCode == RESULT_OK) {
@@ -116,7 +125,8 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_settings -> {
-                showDataOverwriteConfirmationDialog()
+                //showDataOverwriteConfirmationDialog()
+                showLoginDialog()
                 true
             }
             R.id.action_share_device_data -> {
