@@ -174,5 +174,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, "Error al compartir datos: ${e.message}", Toast.LENGTH_LONG).show()
         }
+
     }
 }
