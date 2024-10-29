@@ -11,4 +11,5 @@ object GlobalSettings {
 
     // URL base para Retrofit
     const val BASE_URL = "https://samloto.com:4015/api/"
+    const val WS_URL = "ws://samloto.com:7094/ws"
 }
