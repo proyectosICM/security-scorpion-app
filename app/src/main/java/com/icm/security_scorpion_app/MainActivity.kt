@@ -115,7 +115,19 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.device_settings -> {
                 Toast.makeText(this, "Configurar dispositivo nuevo seleccionado", Toast.LENGTH_SHORT).show()
+
+                // 1️⃣ Obtener lista de dispositivos
+                val devices = LoadDeviceStorageManager.loadDevicesFromJson(this)
+
+                // 2️⃣ Extraer solo las IPs en un ArrayList<String>
+                val ipList = ArrayList<String>()
+                for (device in devices) {
+                    ipList.add(device.ipLocal) // Asegúrate de que "device" tiene una propiedad "ip"
+                }
+
+                // 3️⃣ Enviar la lista de IPs a la nueva actividad
                 val intent = Intent(this, ConfigureDeviceActivity::class.java)
+                intent.putStringArrayListExtra("device_ips", ipList)
                 startActivity(intent)
                 true
             }
