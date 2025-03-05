@@ -30,7 +30,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var networkChangeReceiver: NetworkChangeReceiver
     private lateinit var isConnectedTextView: TextView
     private lateinit var ipRouterTextView: TextView
-
     private lateinit var deviceManager: DeviceManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,6 +48,9 @@ class MainActivity : AppCompatActivity() {
         deviceManager.loadAndDisplayDevices()
     }
 
+    /**
+     * Initializes the user interface, linking views and configuring buttons.
+     */
     private fun initializeUI() {
         llDevicesContent = findViewById(R.id.llDevicesContent)
         val btnAddDevice = findViewById<Button>(R.id.btnAddDevice)
@@ -61,38 +63,39 @@ class MainActivity : AppCompatActivity() {
         ipRouterTextView = findViewById(R.id.ipRouterTextView)
     }
 
+    /**
+     * Creates and initializes the BroadcastReceiver that will detect changes in the network connection and update the corresponding views.
+     * and update the corresponding views.
+     */
     private fun initializeNetworkChangeReceiver() {
         networkChangeReceiver = NetworkChangeReceiver(isConnectedTextView, ipRouterTextView)
     }
 
+    /**
+     * Registers the BroadcastReceiver in the system to start receiving events.
+     * of changes in the network connection.
+     */
     private fun registerNetworkChangeReceiver() {
         val intentFilter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         registerReceiver(networkChangeReceiver, intentFilter)
     }
 
+    /**
+     * It is executed when the activity is destroyed.
+     * BroadcastReceiver is unregistered to avoid memory leaks.
+     */
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(networkChangeReceiver)
     }
 
+    /**
+     * Called when the activity is resumed.
+     * Reloads the list of devices in case of changes.
+     */
     override fun onResume() {
         super.onResume()
         deviceManager.loadAndDisplayDevices()
-    }
-
-    private fun showDataOverwriteConfirmationDialog() {
-        DialogUtils.showDataOverwriteConfirmationDialog(this) {
-            deviceManager.fetchDevicesFromServer()
-        }
-    }
-
-    private fun showLoginDialog() {
-        DialogUtils.showDataOverwriteConfirmationDialog(this) {
-            DialogUtils.showLoginDialog(this) { username, password ->
-                deviceManager.fetchDevicesFromServerAuth(username, password)
-                //Toast.makeText(this, "Usuario: $username, Contraseña: $password", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -106,71 +109,107 @@ class MainActivity : AppCompatActivity() {
         private const val ADD_DEVICE_REQUEST_CODE = 1
     }
 
+    /**
+     * Shows a login dialog to authenticate and load device data from the API.
+     */
+    private fun showLoginDialog() {
+        DialogUtils.showDataOverwriteConfirmationDialog(this) {
+            DialogUtils.showLoginDialog(this) { username, password ->
+                deviceManager.fetchDevicesFromServerAuth(username, password)
+            }
+        }
+    }
+
+    /**
+     * Inflates the toolbar menu options from the XML resource.
+     * This method is called when the toolbar menu is created.
+     *
+     * @param menu The menu in which items are placed.
+     * @return true to display the menu.
+     */
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.options_menu, menu)
         return true
     }
 
+    /**
+     * Handles toolbar menu item selections. Based on the selected option, it performs different actions:
+     * - Opens the network configuration screen.
+     * - Loads device data from a JSON file.
+     * - Displays the login dialog.
+     * - Shares device data via WhatsApp.
+     */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+
+            /** Network configuration */
             R.id.device_settings -> {
-                Toast.makeText(this, "Configurar dispositivo nuevo seleccionado", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Configurar una nueva red", Toast.LENGTH_SHORT).show()
 
-                // 1️⃣ Obtener lista de dispositivos
                 val devices = LoadDeviceStorageManager.loadDevicesFromJson(this)
-
-                // 2️⃣ Extraer solo las IPs en un ArrayList<String>
                 val ipList = ArrayList<String>()
+
                 for (device in devices) {
-                    ipList.add(device.ipLocal) // Asegúrate de que "device" tiene una propiedad "ip"
+                    ipList.add(device.ipLocal)
                 }
 
-                // 3️⃣ Enviar la lista de IPs a la nueva actividad
                 val intent = Intent(this, ConfigureDeviceActivity::class.java)
                 intent.putStringArrayListExtra("device_ips", ipList)
                 startActivity(intent)
                 true
             }
+
+            /** Loads device data from a JSON file */
             R.id.load_from_json -> {
                 val intent = Intent(this, LoadFromJsonActivity::class.java)
                 startActivity(intent)
                 true
             }
+
+            /** Shows login dialog for API authentication */
             R.id.action_settings -> {
-                //showDataOverwriteConfirmationDialog()
                 showLoginDialog()
                 true
             }
+
+            /** Shares device data via WhatsApp */
             R.id.action_share_device_data -> {
                 shareDeviceData()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
 
+    private fun isAppInstalled(packageName: String): Boolean {
+        return try {
+            packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * This function shares the device data by converting it to JSON,
+     * saving it as a file, and then sharing it via WhatsApp.
+     */
     private fun shareDeviceData() {
-        // Obtener la lista de dispositivos
         val devices = LoadDeviceStorageManager.loadDevicesFromJson(this)
-        Log.d("ss", "$devices")
-        // Convertir la lista de dispositivos a JSON
         val gson = Gson()
         val jsonString = gson.toJson(devices)
-
-        // Crear un archivo para almacenar el JSON
         val fileName = "device_data.json"
         val file = File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), fileName)
 
         try {
-            // Escribir el JSON en el archivo
             FileWriter(file).use { writer ->
                 writer.write(jsonString)
             }
 
-            // Compartir el archivo a través de WhatsApp
             val uri: Uri = FileProvider.getUriForFile(
                 this,
-                "$packageName.provider", // Asegúrate de que el provider esté configurado en tu manifest
+                "$packageName.provider",
                 file
             )
 
@@ -184,7 +223,8 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent.createChooser(shareIntent, "Compartir datos de dispositivos"))
 
         } catch (e: Exception) {
-            Toast.makeText(this, "Error al compartir datos: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Error al compartir datos", Toast.LENGTH_LONG).show()
+            Log.e("MainActivity", "Error al compartir datos", e)
         }
 
     }
