@@ -18,7 +18,7 @@ interface JsonPlaceHolderApi {
         @Body deviceData: DeviceUpdateRequest
     ): Call<Void>
 
-    @GET("devices/auth")
+    @GET("device-groups/auth")
     fun getDevicesByAuth(
         @Query("username") username: String,
         @Query("password") password: String
