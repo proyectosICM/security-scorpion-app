@@ -26,7 +26,7 @@ class EditDeviceActivity : AppCompatActivity() {
 
     private var connectionManager: ESP32ConnectionManager? = null
     private lateinit var jsonPlaceHolderApi: JsonPlaceHolderApi
-
+    private lateinit var deviceAdapter: DeviceAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_device)
@@ -49,6 +49,7 @@ class EditDeviceActivity : AppCompatActivity() {
         val deviceIpEditText = findViewById<EditText>(R.id.deviceIpEditText)
         val btnDeleteDevice = findViewById<Button>(R.id.btnDeleteDevice)
         val btnSave = findViewById<Button>(R.id.saveButton)
+        val btnChangeWifi = findViewById<Button>(R.id.btnChangeWifi)
         val deviceIdTextView = findViewById<TextView>(R.id.deviceIdTextView)
 
         // Cargar los datos en los EditText
@@ -59,6 +60,7 @@ class EditDeviceActivity : AppCompatActivity() {
         // Configurar listeners de botones
         btnSave.setOnClickListener { handleSave(deviceName, deviceIp, deviceIdTextView.text.toString(), deviceNameEditText.text.toString(), deviceIpEditText.text.toString()) }
         btnDeleteDevice.setOnClickListener { handleDelete(deviceName) }
+        btnChangeWifi.setOnClickListener{handleChangeRed()}
     }
 
     private fun handleSave(originalDeviceName: String?, originalDeviceIp: String?, deviceId: String, newDeviceName: String, newDeviceIp: String) {
@@ -107,8 +109,22 @@ class EditDeviceActivity : AppCompatActivity() {
         }
     }
 
+    private fun handleChangeRed(){
+        val intent = Intent(this, ConfigureDeviceActivity::class.java)
+
+        // Obtener la IP actual del dispositivo desde el campo de texto
+        val ipList = arrayListOf(findViewById<EditText>(R.id.deviceIpEditText).text.toString())
+
+        // Enviar la IP del dispositivo al Intent
+        intent.putExtra("device_ips", ipList)
+
+        startActivity(intent)
+    }
+
     private fun sendConfigToDevice(newDeviceName: String, newDeviceIp: String) {
         connectionManager?.sendMessage("editConfig:setName:$newDeviceName;setIp:$newDeviceIp")
+
+        //deviceAdapter.sendMessageToWebSocket("editConfig:setName:$newDeviceName;setIp:$newDeviceIp")
         Log.d("DeviceEdit", "Datos enviados al ESP32 exitosamente.")
     }
 

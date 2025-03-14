@@ -109,6 +109,9 @@
         android:layout_marginTop="8dp"
         android:layout_marginHorizontal="20dp"
         android:padding="12dp"
+        android:focusable="false"
+        android:cursorVisible="false"
+        android:clickable="false"
         android:background="@drawable/edit_text_border"
         app:layout_constraintTop_toBottomOf="@id/deviceIpLabel"
         app:layout_constraintStart_toStartOf="parent"
@@ -141,5 +144,20 @@
         app:layout_constraintTop_toBottomOf="@id/saveButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btnChangeWifi"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Cambiar red"
+        android:textColor="@color/black"
+        android:background="@color/white"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="50sp"
+        android:layout_marginHorizontal="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

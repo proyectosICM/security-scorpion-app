@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
 
             /** Network configuration */
             R.id.device_settings -> {
-                Toast.makeText(this, "Configurar una nueva red", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Configurar una nueva red General", Toast.LENGTH_SHORT).show()
 
                 val devices = LoadDeviceStorageManager.loadDevicesFromJson(this)
                 val ipList = ArrayList<String>()

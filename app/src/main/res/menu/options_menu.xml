@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/device_settings"
-        android:title="Configurar nueva red"
+        android:title="Configurar nueva red general"
         android:orderInCategory="100"
         app:showAsAction="never" />
     <item
