@@ -8,7 +8,7 @@ object GlobalSettings {
 
     // Mensajes predeterminados
     const val MESSAGE_ACTIVATE = "activate"
-    const val MESSAGE_DEACTIVATE = "activate"
+    const val MESSAGE_DEACTIVATE = "deactivate"
     const val MESSAGE_DISCONNECT = "disconnect"
     const val ERROR_CONNECTION_FAILED = "No se pudo conectar al dispositivo: "
     const val ERROR_MESSAGE_SEND_FAILED = "Error al enviar el mensaje: "

@@ -57,30 +57,57 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
 
             btnAction.setOnClickListener {
                 connectionManager?.disconnect()
-                fun activateButtonTemporarily() {
-                    btnAction.setBackgroundColor(ContextCompat.getColor(context, R.color.green_light)) // Cambia a verde
-                    btnAction.postDelayed({
-                        btnAction.setBackgroundResource(R.drawable.border) // Regresa al color original
-                    }, 2000) // 2 segundos
+
+                // Verifica el estado actual del botón
+                val isActivated = btnAction.tag as? Boolean ?: false
+
+                // Nueva función para cambiar el estado del botón
+                fun updateButtonState(activated: Boolean) {
+                    if (activated) {
+                        btnAction.setBackgroundColor(ContextCompat.getColor(context, R.color.green_light)) // Verde
+                        btnAction.tag = true
+                    } else {
+                        btnAction.setBackgroundResource(R.drawable.border) // Color original
+                        btnAction.tag = false
+                    }
                 }
 
                 if (getSubnet(currentIp) == getSubnet(deviceIp)) {
                     connectionManager = ESP32ConnectionManager(deviceIp, GlobalSettings.SOCKET_LOCAL_PORT)
                     connectionManager?.connect { isConnected ->
                         if (isConnected) {
-                            connectionManager?.sendMessage(GlobalSettings.MESSAGE_ACTIVATE)
-                            Toast.makeText(context, "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
-                            activateButtonTemporarily()
+                            if (isActivated) {
+                                // Enviar mensaje de DESACTIVACIÓN
+                                connectionManager?.sendMessage(GlobalSettings.MESSAGE_DEACTIVATE)
+                                Toast.makeText(context, "Dispositivo Desactivado Localmente", Toast.LENGTH_SHORT).show()
+                            } else {
+                                // Enviar mensaje de ACTIVACIÓN
+                                connectionManager?.sendMessage(GlobalSettings.MESSAGE_ACTIVATE)
+                                Toast.makeText(context, "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
+                            }
+                            updateButtonState(!isActivated)
                         } else {
-                            deviceAdapter.sendMessageToWebSocket("activate:${device.id}")
-                            Toast.makeText(context, "Dispositivo Activado Remotamente", Toast.LENGTH_SHORT).show()
-                            activateButtonTemporarily()
+                            if (isActivated) {
+                                // Enviar mensaje de DESACTIVACIÓN remota
+                                deviceAdapter.sendMessageToWebSocket("deactivate:${device.id}")
+                                Toast.makeText(context, "Dispositivo Desactivado Remotamente", Toast.LENGTH_SHORT).show()
+                            } else {
+                                // Enviar mensaje de ACTIVACIÓN remota
+                                deviceAdapter.sendMessageToWebSocket("activate:${device.id}")
+                                Toast.makeText(context, "Dispositivo Activado Remotamente", Toast.LENGTH_SHORT).show()
+                            }
+                            updateButtonState(!isActivated)
                         }
                     }
                 } else {
-                    deviceAdapter.sendMessageToWebSocket("activate:${device.id}")
-                    Toast.makeText(context, "Dispositivo Activado Remotamente (IP Diferente)", Toast.LENGTH_SHORT).show()
-                    activateButtonTemporarily()
+                    if (isActivated) {
+                        deviceAdapter.sendMessageToWebSocket("deactivate:${device.id}")
+                        Toast.makeText(context, "Dispositivo Desactivado Remotamente (IP Diferente)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        deviceAdapter.sendMessageToWebSocket("activate:${device.id}")
+                        Toast.makeText(context, "Dispositivo Activado Remotamente (IP Diferente)", Toast.LENGTH_SHORT).show()
+                    }
+                    updateButtonState(!isActivated)
                 }
             }
 
