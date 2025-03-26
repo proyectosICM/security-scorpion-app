@@ -6,22 +6,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.icm.security_scorpion_app.data.DeviceModel
+import com.icm.security_scorpion_app.utils.DeviceManager
+import com.icm.security_scorpion_app.utils.GlobalSettings
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import java.util.Timer
 import java.util.TimerTask
 
-class DeviceAdapter(private val context: Context, private val devices: List<DeviceModel>) : RecyclerView.Adapter<DeviceAdapter.DeviceViewHolder>() {
+class DeviceAdapter(private val context: Context, private val devices: List<DeviceModel>, private val llDevicesContent: LinearLayout?) : RecyclerView.Adapter<DeviceAdapter.DeviceViewHolder>() {
 
     private var webSocketClient: WebSocketClient? = null
-
+    private val deviceManager: DeviceManager by lazy {
+        DeviceManager(context, llDevicesContent)
+    }
     init {
-        val uri = URI("ws://samloto.com:7094/ws")
+        val uri = URI(GlobalSettings.WS_URL)
         createWebSocketClient(uri)
     }
 
@@ -60,7 +65,19 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
 
             override fun onMessage(message: String?) {
                 Log.d("WebSocket", "Message received: $message")
+
+                message?.let {
+                    val cleanedMessage = it.substringAfterLast(": ").trim() // Ignora todo antes del último ": "
+
+                    if (cleanedMessage.startsWith("actlist:")) {
+                        val receivedId = cleanedMessage.substringAfter("actlist:").trim()
+                        if (receivedId == GlobalSettings.groupId.toString()) {
+                            deviceManager.fetchDevicesFromServerAuth(GlobalSettings.username ?: "", GlobalSettings.password ?: "")
+                        }
+                    }
+                }
             }
+
 
             override fun onClose(code: Int, reason: String?, remote: Boolean) {
                 Log.d("WebSocket", "Disconnected from the server")
@@ -78,7 +95,7 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
         // Logic to reconnect with a delay
         Timer().schedule(object : TimerTask() {
             override fun run() {
-                createWebSocketClient(URI("ws://samloto.com:7094/ws"))
+                createWebSocketClient(URI(GlobalSettings.WS_URL))
             }
         }, 5000) // Reconnect after 5 seconds
     }
@@ -89,7 +106,7 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
             (context as MainActivity).runOnUiThread {
                 Toast.makeText(context, "Dispositivo Activado Remotamente", Toast.LENGTH_SHORT).show()
             }
-            webSocketClient?.close()
+            //webSocketClient?.close()
         } else {
             Log.e("WebSocket", "WebSocket is not open. Cannot send message.")
             (context as MainActivity).runOnUiThread {
@@ -98,4 +115,6 @@ class DeviceAdapter(private val context: Context, private val devices: List<Devi
             reconnect()
         }
     }
+
+
 }

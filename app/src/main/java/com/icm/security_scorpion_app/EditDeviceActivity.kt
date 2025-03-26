@@ -85,7 +85,6 @@ class EditDeviceActivity : AppCompatActivity() {
             if (isConnected) {
                 sendConfigToDevice(newDeviceName, newDeviceIp)
                 if (updateLocalJson(deviceId, newDeviceName, newDeviceIp)) {
-                    Log.d("DeviceEdit", "Datos actualizados localmente.")
                     sendUpdateRequestToServer(deviceId, newDeviceName, newDeviceIp)
                     finish()
                 }

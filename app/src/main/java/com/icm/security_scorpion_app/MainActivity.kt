@@ -9,7 +9,6 @@ import android.os.Environment
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -21,6 +20,7 @@ import com.icm.security_scorpion_app.data.LoadDeviceStorageManager
 import com.icm.security_scorpion_app.utils.DeviceManager
 import com.icm.security_scorpion_app.utils.NetworkChangeReceiver
 import com.icm.security_scorpion_app.utils.DialogUtils
+import com.icm.security_scorpion_app.utils.GlobalSettings
 import java.io.File
 import java.io.FileWriter
 
@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -46,19 +47,24 @@ class MainActivity : AppCompatActivity() {
 
         deviceManager = DeviceManager(this, llDevicesContent)
         deviceManager.loadAndDisplayDevices()
+        GlobalSettings.init(this)
+
+        deviceManager.fetchDevicesFromServerAuth(GlobalSettings.username ?: "", GlobalSettings.password ?: "")
     }
 
     /**
+     *
      * Initializes the user interface, linking views and configuring buttons.
      */
     private fun initializeUI() {
         llDevicesContent = findViewById(R.id.llDevicesContent)
+        /*
         val btnAddDevice = findViewById<Button>(R.id.btnAddDevice)
         btnAddDevice.setOnClickListener {
             val intent = Intent(this, AddDevice::class.java)
             startActivity(intent)
         }
-
+        */
         isConnectedTextView = findViewById(R.id.isConnectedTextView)
         ipRouterTextView = findViewById(R.id.ipRouterTextView)
     }
@@ -160,11 +166,13 @@ class MainActivity : AppCompatActivity() {
             }
 
             /** Loads device data from a JSON file */
+            /*
             R.id.load_from_json -> {
                 val intent = Intent(this, LoadFromJsonActivity::class.java)
                 startActivity(intent)
                 true
             }
+             */
 
             /** Shows login dialog for API authentication */
             R.id.action_settings -> {

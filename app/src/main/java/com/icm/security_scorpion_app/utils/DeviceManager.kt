@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.google.gson.Gson
 import com.icm.security_scorpion_app.DeviceAdapter
 import com.icm.security_scorpion_app.EditDeviceActivity
@@ -24,7 +25,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class DeviceManager(private val context: Context, private val llDevicesContent: LinearLayout) {
+class DeviceManager(private val context: Context, private val llDevicesContent: LinearLayout?) {
 
     private var connectionManager: ESP32ConnectionManager? = null
     private lateinit var deviceAdapter: DeviceAdapter
@@ -33,7 +34,7 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
         val devices = LoadDeviceStorageManager.loadDevicesFromJson(context)
         Log.d("DeviceManager", "Devices loaded: $devices")
 
-        llDevicesContent.removeAllViews()
+        llDevicesContent?.removeAllViews()
 
         val inflater = LayoutInflater.from(context)
         for (device in devices) {
@@ -47,17 +48,39 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
             tvDeviceName.text = device.nameDevice
             tvDeviceIp.text = device.ipLocal
             tvDeviceId.text = device.id.toString()
+            val currentIp = NetworkUtils.getRouterIpAddress(context)
+            val deviceIp = tvDeviceIp.text.toString()
+ 
+            fun getSubnet(ip: String): String {
+                return ip.substringBeforeLast(".") // Obtiene los primeros 3 octetos (Ej: "192.168.1")
+            }
 
             btnAction.setOnClickListener {
                 connectionManager?.disconnect()
-                connectionManager = ESP32ConnectionManager(tvDeviceIp.text.toString(), GlobalSettings.SOCKET_LOCAL_PORT)
-                connectionManager?.connect { isConnected ->
-                    if (isConnected) {
-                        connectionManager?.sendMessage(GlobalSettings.MESSAGE_ACTIVATE)
-                        Toast.makeText(context, "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
-                    } else {
-                        deviceAdapter.sendMessageToWebSocket("${device.nameDevice}:Activating")
+                fun activateButtonTemporarily() {
+                    btnAction.setBackgroundColor(ContextCompat.getColor(context, R.color.green_light)) // Cambia a verde
+                    btnAction.postDelayed({
+                        btnAction.setBackgroundResource(R.drawable.border) // Regresa al color original
+                    }, 2000) // 2 segundos
+                }
+
+                if (getSubnet(currentIp) == getSubnet(deviceIp)) {
+                    connectionManager = ESP32ConnectionManager(deviceIp, GlobalSettings.SOCKET_LOCAL_PORT)
+                    connectionManager?.connect { isConnected ->
+                        if (isConnected) {
+                            connectionManager?.sendMessage(GlobalSettings.MESSAGE_ACTIVATE)
+                            Toast.makeText(context, "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
+                            activateButtonTemporarily()
+                        } else {
+                            deviceAdapter.sendMessageToWebSocket("activate:${device.id}")
+                            Toast.makeText(context, "Dispositivo Activado Remotamente", Toast.LENGTH_SHORT).show()
+                            activateButtonTemporarily()
+                        }
                     }
+                } else {
+                    deviceAdapter.sendMessageToWebSocket("activate:${device.id}")
+                    Toast.makeText(context, "Dispositivo Activado Remotamente (IP Diferente)", Toast.LENGTH_SHORT).show()
+                    activateButtonTemporarily()
                 }
             }
 
@@ -70,9 +93,9 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
                 context.startActivity(intent)
             }
 
-            llDevicesContent.addView(view)
+            llDevicesContent?.addView(view)
         }
-        deviceAdapter = DeviceAdapter(context, devices)
+        deviceAdapter = DeviceAdapter(context, devices, llDevicesContent )
     }
 
     fun fetchDevicesFromServer() {
@@ -128,6 +151,15 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
                     200 -> {
                         val devices = response.body()
                         if (devices != null) {
+                            GlobalSettings.username = username
+                            GlobalSettings.password = password
+                            Log.d("DeviceManager", "Credenciales guardadas: ${GlobalSettings.username}, ${GlobalSettings.password}")
+
+                            devices[0].deviceGroupModel?.let {
+                                GlobalSettings.groupId = it.id
+                            } ?: Log.e("DeviceManager(s)", "deviceGroupModel es nulo, no se asignó Group ID")
+                            Log.d("DeviceManager(s)", "Group ID Saved: ${GlobalSettings.groupId}")
+
                             SaveDeviceStorageManager.saveDevicesToJson(context, devices)
                             loadAndDisplayDevices()
                             val jsonResponse = Gson().toJson(devices)

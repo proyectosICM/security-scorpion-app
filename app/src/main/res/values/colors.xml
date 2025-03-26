@@ -19,4 +19,6 @@
     <color name="colorTransparent">#00ffffff</color>
     <color name="colorStart">#cb5ed9</color>
     <color name="colorEnd">#8463d4</color>
+
+    <color name="green_light">#8BC34A</color>
 </resources>
