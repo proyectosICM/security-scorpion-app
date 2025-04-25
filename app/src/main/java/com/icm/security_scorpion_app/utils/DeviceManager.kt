@@ -14,7 +14,6 @@ import com.google.gson.Gson
 import com.icm.security_scorpion_app.DeviceAdapter
 import com.icm.security_scorpion_app.EditDeviceActivity
 import com.icm.security_scorpion_app.R
-import com.icm.security_scorpion_app.data.DeleteDeviceStorageManager
 import com.icm.security_scorpion_app.data.DeviceModel
 import com.icm.security_scorpion_app.data.LoadDeviceStorageManager
 import com.icm.security_scorpion_app.data.SaveDeviceStorageManager
@@ -29,6 +28,8 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
 
     private var connectionManager: ESP32ConnectionManager? = null
     private lateinit var deviceAdapter: DeviceAdapter
+    private val autoDisableHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var autoDisableRunnable: Runnable? = null
 
     fun loadAndDisplayDevices() {
         val devices = LoadDeviceStorageManager.loadDevicesFromJson(context)
@@ -58,17 +59,29 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
             btnAction.setOnClickListener {
                 connectionManager?.disconnect()
 
-                // Verifica el estado actual del botón
                 val isActivated = btnAction.tag as? Boolean ?: false
 
-                // Nueva función para cambiar el estado del botón
                 fun updateButtonState(activated: Boolean) {
                     if (activated) {
                         btnAction.setBackgroundColor(ContextCompat.getColor(context, R.color.green_light)) // Verde
                         btnAction.tag = true
+
+                        // Programar desactivación automática en 2 minutos
+                        autoDisableRunnable?.let { autoDisableHandler.removeCallbacks(it) }
+                        autoDisableRunnable = Runnable {
+                            if (btnAction.tag as? Boolean == true) { // Si sigue activado
+                                btnAction.performClick() // Simular clic para desactivarlo
+                                Toast.makeText(context, "⏳ Desactivado automáticamente tras 2 minutos", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        autoDisableHandler.postDelayed(autoDisableRunnable!!, 120000) // 120,000 ms = 2 min
+
                     } else {
                         btnAction.setBackgroundResource(R.drawable.border) // Color original
                         btnAction.tag = false
+
+                        // Cancelar cualquier desactivación programada
+                        autoDisableRunnable?.let { autoDisableHandler.removeCallbacks(it) }
                     }
                 }
 
@@ -77,22 +90,18 @@ class DeviceManager(private val context: Context, private val llDevicesContent: 
                     connectionManager?.connect { isConnected ->
                         if (isConnected) {
                             if (isActivated) {
-                                // Enviar mensaje de DESACTIVACIÓN
                                 connectionManager?.sendMessage(GlobalSettings.MESSAGE_DEACTIVATE)
                                 Toast.makeText(context, "Dispositivo Desactivado Localmente", Toast.LENGTH_SHORT).show()
                             } else {
-                                // Enviar mensaje de ACTIVACIÓN
                                 connectionManager?.sendMessage(GlobalSettings.MESSAGE_ACTIVATE)
                                 Toast.makeText(context, "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
                             }
                             updateButtonState(!isActivated)
                         } else {
                             if (isActivated) {
-                                // Enviar mensaje de DESACTIVACIÓN remota
                                 deviceAdapter.sendMessageToWebSocket("deactivate:${device.id}")
                                 Toast.makeText(context, "Dispositivo Desactivado Remotamente", Toast.LENGTH_SHORT).show()
                             } else {
-                                // Enviar mensaje de ACTIVACIÓN remota
                                 deviceAdapter.sendMessageToWebSocket("activate:${device.id}")
                                 Toast.makeText(context, "Dispositivo Activado Remotamente", Toast.LENGTH_SHORT).show()
                             }
