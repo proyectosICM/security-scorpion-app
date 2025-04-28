@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.FileProvider
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.gson.Gson
 import com.icm.security_scorpion_app.data.LoadDeviceStorageManager
 import com.icm.security_scorpion_app.utils.DeviceManager
@@ -32,12 +33,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ipRouterTextView: TextView
     private lateinit var deviceManager: DeviceManager
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
         val toolbar: Toolbar = findViewById(R.id.toolbar)
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
@@ -50,6 +53,37 @@ class MainActivity : AppCompatActivity() {
         GlobalSettings.init(this)
 
         deviceManager.fetchDevicesFromServerAuth(GlobalSettings.username ?: "", GlobalSettings.password ?: "")
+
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.navigation_home ->             // Ya estás en MainActivity, no haces nada o puedes recargar
+                    return@setOnItemSelectedListener true
+
+                R.id.navigation_cameras -> {
+                    val intent = Intent (
+                        this@MainActivity,
+                        CamerasPanel::class.java
+                    )
+                    startActivity(intent)
+                    finish();
+                    return@setOnItemSelectedListener true
+                }
+
+
+                R.id.navigation_settings -> {
+                    // Lanzar otra Activity
+                    val intent =
+                        Intent(
+                            this@MainActivity,
+                            SettingsActivity::class.java
+                        )
+                    startActivity(intent)
+                    finish();
+                    return@setOnItemSelectedListener true
+                }
+            }
+            false
+        }
     }
 
     /**

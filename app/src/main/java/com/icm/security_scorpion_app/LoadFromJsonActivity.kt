@@ -50,10 +50,13 @@ class LoadFromJsonActivity : AppCompatActivity() {
         handleIncomingIntent(intent)
     }
 
+    /*
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         handleIncomingIntent(intent)
     }
+
+     */
 
     private fun handleIncomingIntent(intent: Intent?) {
         intent?.let {
