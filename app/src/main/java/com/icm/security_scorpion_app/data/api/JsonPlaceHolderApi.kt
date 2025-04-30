@@ -25,7 +25,7 @@ interface JsonPlaceHolderApi {
         @Query("password") password: String
     ): Call<List<DeviceModel>>
 
-    @GET("cameras/by-group")
+    @GET("cameras/by-group/{id}")
     fun getCamerasByGroup(
         @Path("id") groupId: String,
     ) : Call<List<CameraModel>>
