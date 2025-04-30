@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
-import com.icm.security_scorpion_app.MainActivity
 import com.icm.security_scorpion_app.utils.ESP32ConnectionManager
 
 class ConfigureDeviceActivity : AppCompatActivity() {
@@ -103,7 +102,7 @@ class ConfigureDeviceActivity : AppCompatActivity() {
     }
 
     private fun redirectToMain() {
-        val intent = Intent(this, MainActivity::class.java)
+        val intent = Intent(this, MainActivity2::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()

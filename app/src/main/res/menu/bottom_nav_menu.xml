@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/ic_home"
@@ -9,7 +10,7 @@
         android:icon="@drawable/baseline_camera_indoor_24"
         android:title="Camaras" />
     <item
-        android:id="@+id/navigation_settings"
+        android:id="@+id/navigation_config"
         android:icon="@drawable/ic_settings"
         android:title="Configuración" />
 </menu>

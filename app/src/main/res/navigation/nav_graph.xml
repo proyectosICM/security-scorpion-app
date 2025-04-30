@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph.xml"
+    app:startDestination="@id/homeFragment">
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.icm.security_scorpion_app.HomeFragment"
+        android:label="Home" />
+
+    <fragment
+        android:id="@+id/camerasFragment"
+        android:name="com.icm.security_scorpion_app.CamerasFragment"
+        android:label="Cámaras" />
+
+    <fragment
+        android:id="@+id/configFragment"
+        android:name="com.icm.security_scorpion_app.ConfigFragment"
+        android:label="Configuración" />
+</navigation>
