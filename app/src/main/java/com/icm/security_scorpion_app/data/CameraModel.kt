@@ -8,6 +8,7 @@ data class CameraModel(
     var active: Boolean,
     var usernameEncrypted: String,
     var passwordEncrypted: String,
-    var deviceGroupModel: Long = 0L,
-
+    var deviceGroupId: Long = 0L,
+    var deviceId: Long = 0L,
+    var deviceIp: String,
 )

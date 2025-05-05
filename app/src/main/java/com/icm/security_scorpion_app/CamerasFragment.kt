@@ -5,10 +5,13 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.*
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.icm.security_scorpion_app.data.CameraModel
 import com.icm.security_scorpion_app.data.api.RetrofitInstance
+import com.icm.security_scorpion_app.utils.ESP32ConnectionManager
 import com.icm.security_scorpion_app.utils.GlobalSettings
+import com.icm.security_scorpion_app.utils.NetworkUtils
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
@@ -22,18 +25,36 @@ class CamerasFragment : Fragment() {
     private val mediaPlayers = mutableListOf<MediaPlayer>()
     private val libVLCInstances = mutableListOf<LibVLC>()
 
+    private var connectionManager: ESP32ConnectionManager? = null
+    private val autoDisableHandler = android.os.Handler()
+    private var autoDisableRunnable: Runnable? = null
+    private lateinit var deviceAdapter: DeviceAdapter // Asegúrate de inicializarlo correctamente
+
+    private lateinit var currentIp: String
+    fun getSubnet(ip: String): String {
+        return ip.substringBeforeLast(".") // Obtiene los primeros 3 octetos (Ej: "192.168.1")
+    }
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_cameras, container, false)
+
+        currentIp = NetworkUtils.getRouterIpAddress(requireContext())
+
+        deviceAdapter = DeviceAdapter(requireContext(), emptyList(), null)
+
         val groupId = GlobalSettings.groupId
 
         if (groupId == null) {
             Toast.makeText(requireContext(), "No se encontró el ID de grupo", Toast.LENGTH_SHORT).show()
             return view
         }
+
+
 
         RetrofitInstance.api.getCamerasByGroup(groupId.toString())
             .enqueue(object : Callback<List<CameraModel>> {
@@ -44,7 +65,7 @@ class CamerasFragment : Fragment() {
                         if (!cameras.isNullOrEmpty()) {
                             cameras.forEach { camera ->
                                 if (camera.active) {
-                                    addCameraPlayer(view, camera.localUrl, camera.id.toString())
+                                    addCameraPlayer(view, camera.localUrl, camera)
                                 }
                             }
                         } else {
@@ -63,7 +84,7 @@ class CamerasFragment : Fragment() {
         return view
     }
 
-    private fun addCameraPlayer(rootView: View, videoUrl: String, cameraId: String) {
+    private fun addCameraPlayer(rootView: View, videoUrl: String, camera: CameraModel) {
         val container = rootView.findViewById<LinearLayout>(R.id.video_container)
 
         val inflater = LayoutInflater.from(requireContext())
@@ -73,17 +94,78 @@ class CamerasFragment : Fragment() {
         val videoLayout = cameraView.findViewById<VLCVideoLayout>(R.id.video_layout)
         val actionButton = cameraView.findViewById<Button>(R.id.action_button)
 
-        titleTextView.text = "Cámara ID: $cameraId"
+        titleTextView.text = "Cámara ID: ${camera.id}"
 
-        actionButton.setOnClickListener {
-            Toast.makeText(requireContext(), "Accionar cámara $cameraId", Toast.LENGTH_SHORT).show()
-            // Aquí puedes llamar a tu API
+
+        if (camera.deviceId == 0L) {
+            actionButton.visibility = View.GONE
+        } else {
+            actionButton.visibility = View.VISIBLE
+            actionButton.tag = false // Inicialmente desactivado
+
+            actionButton.setOnClickListener {
+                connectionManager?.disconnect()
+
+                val isActivated = actionButton.tag as? Boolean ?: false
+
+                fun updateButtonState(activated: Boolean) {
+                    if (activated) {
+                        actionButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.green_light))
+                        actionButton.tag = true
+
+                        autoDisableRunnable?.let { autoDisableHandler.removeCallbacks(it) }
+                        autoDisableRunnable = Runnable {
+                            if (actionButton.tag as? Boolean == true) {
+                                actionButton.performClick()
+                                Toast.makeText(requireContext(), "⏳ Desactivado automáticamente tras 2 minutos", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        autoDisableHandler.postDelayed(autoDisableRunnable!!, 120000)
+
+                    } else {
+                        actionButton.setBackgroundResource(R.drawable.border)
+                        actionButton.tag = false
+                        autoDisableRunnable?.let { autoDisableHandler.removeCallbacks(it) }
+                    }
+                }
+
+                if (getSubnet(currentIp) == getSubnet(camera.deviceIp ?: "")) {
+                    connectionManager = ESP32ConnectionManager(camera.deviceIp!!, GlobalSettings.SOCKET_LOCAL_PORT)
+                    connectionManager?.connect { isConnected ->
+                        if (isConnected) {
+                            if (isActivated) {
+                                connectionManager?.sendMessage(GlobalSettings.MESSAGE_DEACTIVATE)
+                                Toast.makeText(requireContext(), "Dispositivo Desactivado Localmente", Toast.LENGTH_SHORT).show()
+                            } else {
+                                connectionManager?.sendMessage(GlobalSettings.MESSAGE_ACTIVATE)
+                                Toast.makeText(requireContext(), "Dispositivo Activado Localmente", Toast.LENGTH_SHORT).show()
+                            }
+                            updateButtonState(!isActivated)
+                        } else {
+                            if (isActivated) {
+                                deviceAdapter.sendMessageToWebSocket("deactivate:${camera.deviceId}")
+                                Toast.makeText(requireContext(), "Dispositivo Desactivado Remotamente", Toast.LENGTH_SHORT).show()
+                            } else {
+                                deviceAdapter.sendMessageToWebSocket("activate:${camera.deviceId}")
+                                Toast.makeText(requireContext(), "Dispositivo Activado Remotamente", Toast.LENGTH_SHORT).show()
+                            }
+                            updateButtonState(!isActivated)
+                        }
+                    }
+                } else {
+                    if (isActivated) {
+                        deviceAdapter.sendMessageToWebSocket("deactivate:${camera.deviceId}")
+                        Toast.makeText(requireContext(), "Dispositivo Desactivado Remotamente (IP diferente)", Toast.LENGTH_SHORT).show()
+                    } else {
+                        deviceAdapter.sendMessageToWebSocket("activate:${camera.deviceId}")
+                        Toast.makeText(requireContext(), "Dispositivo Activado Remotamente (IP diferente)", Toast.LENGTH_SHORT).show()
+                    }
+                    updateButtonState(!isActivated)
+                }
+            }
         }
 
         container.addView(cameraView)
-
-        // 📢 Imprimir la URL en log
-        Log.d("CamerasFragment", "Reproduciendo cámara $cameraId en URL: $videoUrl")
 
         val libVLC = LibVLC(requireContext(), arrayListOf("--no-drop-late-frames", "--no-skip-frames", "--rtsp-tcp"))
         libVLCInstances.add(libVLC)
@@ -103,14 +185,9 @@ class CamerasFragment : Fragment() {
             mediaPlayer.play()
 
             mediaPlayer.setEventListener { event ->
-                Log.d("VLC", "Evento VLC ($cameraId): ${event.type}")
+                Log.d("VLC", "Evento VLC (${camera.id}): ${event.type}")
             }
         }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mediaPlayers.forEach { if (it.isPlaying) it.pause() }
     }
 
     override fun onResume() {
